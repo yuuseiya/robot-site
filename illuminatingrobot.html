@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>AI 支援照明ロボット UI</title>
+    <link rel="stylesheet" href="illuminatingrobot.css">
+</head>
+<body>
+    <header>
+        <h1>AI 支援学習照明コントローラー</h1>
+    </header>
+
+    <div id="visual-feedback-area">
+        <h2 id="status-text">ロボットの状態：オフライン</h2>
+        
+        <div id="active-visual" class="light-off">
+            <div id="character"></div>
+        </div>
+        
+    </div>
+    
+    <div id="control-panel">
+        <p>集中度スコア: <span id="concentration">N/A</span></p>
+
+        <h3>基本操作</h3>
+        <button id="power-toggle" data-status="off">電源をオンにする</button>
+
+        <button id="arm-move">アームを定位置へ動かす</button>
+
+        <h3>照明設定</h3>
+        <label for="brightness-slider">明るさ：<span id="brightness-value">50</span>%</label>
+        <input type="range" id="brightness-slider" min="0" max="100" value="50">
+        
+        <div id="color-controls">
+            <button class="color-btn" data-color="white">白色</button>
+            <button class="color-btn" data-color="blue">青色</button>
+            <button class="color-btn" data-color="yellow">暖色</button>
+        </div>
+    </div>
+    
+    <footer>
+        <p>※ Raspberry Piのサーバー起動が必要です</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+
+    <script src="illuminatingrobot.js"></script>
+</body>
+</html>

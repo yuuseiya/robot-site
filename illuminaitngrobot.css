@@ -1,0 +1,87 @@
+/* ------------------------------------ */
+/* グローバルリセットと基本スタイル */
+/* ------------------------------------ */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    text-align: center;
+    padding: 20px;
+}
+#control-panel {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+}
+#power-toggle[data-status="off"] { background-color: #dc3545; color: white; }
+#power-toggle[data-status="on"] { background-color: #28a745; color: white; }
+
+/* ------------------------------------ */
+/* 映像エリアとキャラクターのスタイル */
+/* ------------------------------------ */
+#visual-feedback-area {
+    margin-bottom: 20px;
+}
+#active-visual {
+    /* キャラクター配置の基点 */
+    width: 300px;
+    height: 100px; /* 腕立ての上下運動のための高さ */
+    margin: 20px auto;
+    position: relative; 
+}
+#character {
+    width: 50px;
+    height: 50px;
+    background-color: #4CAF50; /* キャラクターの色 */
+    border-radius: 50%;
+    position: absolute;
+    bottom: 0; 
+    left: 50%;
+    transform: translateX(-50%);
+    transition: opacity 0.3s;
+    opacity: 0; /* 初期状態では非表示 */
+}
+
+/* ------------------------------------ */
+/* 腕立て伏せアニメーションの定義 */
+/* ------------------------------------ */
+@keyframes pushup {
+    /* 腕を伸ばした状態 */
+    0% {
+        transform: translate(-50%, 0) scaleY(1); 
+    }
+    /* 体を下げた状態 */
+    50% {
+        transform: translate(-50%, 20px) scaleY(0.5); /* Y軸方向に20px下げて潰す */
+        background-color: #FFC107; 
+    }
+    /* 再び腕を伸ばした状態 */
+    100% {
+        transform: translate(-50%, 0) scaleY(1);
+    }
+}
+
+/* ------------------------------------ */
+/* JavaScriptで適用するクラス (電源ON/OFF) */
+/* ------------------------------------ */
+/* 電源ON (照明がON) のとき */
+#active-visual.light-on #character {
+    opacity: 1; /* 表示 */
+    animation: pushup 1.5s infinite ease-in-out; 
+}
+
+/* 電源OFFのとき */
+#active-visual.light-off #character {
+    opacity: 0; /* 非表示 */
+    animation: none;
+}

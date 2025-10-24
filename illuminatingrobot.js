@@ -1,9 +1,11 @@
-// Raspberry PiのIPアドレスをここに設定してください (例: '192.168.1.100')
-const raspberryPiIP = 'localhost'; // テスト中はlocalhostでOK
-const controlURL = `http://${raspberryPiIP}:5000/api/control`;
+// サーバー接続設定 ------------------------------------------------------------------
+// 【重要】サーバーPCのローカルIPアドレスに置き換えてください。
+// 例: const LOCAL_PC_IP = '192.168.1.5'; 
+const LOCAL_PC_IP = '192.168.1.5'; 
+const controlURL = `http://${LOCAL_PC_IP}:5000/api/control`;
 
 // ------------------------------------------------------------------
-// 1. サーバーへのコマンド送信 (REST API)
+// サーバーへのコマンド送信 (REST API) 関数を定義
 // ------------------------------------------------------------------
 function sendCommand(action, value) {
     const data = { action: action, value: value }; 
@@ -14,23 +16,29 @@ function sendCommand(action, value) {
         body: JSON.stringify(data)
     })
     .then(response => {
+        // サーバー側でレスポンスを返す必要があります
         if (!response.ok) throw new Error(`送信失敗: ${response.status}`);
         console.log(`✅ コマンド送信成功: ${action}, ${value}`);
         return response.json(); 
     })
     .catch(error => console.error('❌ 通信エラー発生:', error));
 }
+// ------------------------------------------------------------------
 
 
-// ------------------------------------------------------------------
-// 2. WebSocketによるデータ受信 (AI/集中度フィードバック)
-// ------------------------------------------------------------------
-const socket = io(`http://${raspberryPiIP}:5000`);
-const concentrationDisplay = document.getElementById('concentration');
+// HTML要素の取得
+const powerToggle = document.getElementById('power-toggle');
 const statusText = document.getElementById('status-text');
+const visualArea = document.getElementById('active-visual');
+const timerDisplay = document.getElementById('timer-display');
+const concentrationDisplay = document.getElementById('concentration'); // 集中度表示要素を追加
+
+
+// 2. WebSocketによるデータ受信の初期化 -----------------------------------------------
+const socket = io(`http://${LOCAL_PC_IP}:5000`);
 
 socket.on('connect', () => {
-    statusText.textContent = 'ロボットの状態：接続済み';
+    statusText.textContent = 'ロボットの状態：接続済み (PCサーバー)';
 });
 
 socket.on('disconnect', () => {
@@ -41,54 +49,116 @@ socket.on('disconnect', () => {
 socket.on('status_update', (data) => {
     console.log('受信データ:', data);
     
-    // UIの更新
-    const level = data.concentration_level || 0; // 集中度 (0-100)
-    
-    // 集中度スコア表示を更新
+    const level = data.concentration_level || 'N/A';
     concentrationDisplay.textContent = level;
     
-    // （オプション）集中度に応じてUIの背景色を変えるなど、映像の切り替えを追加可能
+    // (集中度に応じた映像切り替えロジックなどをここに追加)
+});
+// ------------------------------------------------------------------
+
+
+// タイマー関連の変数と関数 (変更なし) -----------------------------------------------
+let isPowerOn = false;
+let startTime = 0;
+let timerInterval = null;
+
+function formatTime(seconds) {
+    const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+}
+
+function updateTimer() {
+    if (!isPowerOn) return;
+    const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+    timerDisplay.textContent = `経過時間: ${formatTime(elapsedSeconds)}`;
+}
+
+function startTimer() {
+    startTime = Date.now();
+    updateTimer(); 
+    timerInterval = setInterval(updateTimer, 1000);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    timerDisplay.textContent = '経過時間: 00:00:00';
+}
+// ------------------------------------------------------------------
+
+
+// 3. UI操作イベントの割り当て ------------------------------------------------------
+// 電源トグルボタンのクリックイベント
+powerToggle.addEventListener('click', () => {
+    const currentStatus = powerToggle.getAttribute('data-status');
+    const isOff = (currentStatus === 'off');
+
+    if (isOff) {
+        // 電源をオンにする
+        powerToggle.setAttribute('data-status', 'on');
+        powerToggle.textContent = '電源をオフにする';
+        statusText.textContent = 'ロボットの状態：オンライン (稼働中)';
+        visualArea.classList.remove('light-off');
+        visualArea.classList.add('light-on');
+        
+        // ★ サーバーへON信号送信 (REST APIを使用)
+        sendCommand('power_toggle', 'on');
+        
+        // タイマー開始
+        isPowerOn = true;
+        startTimer();
+
+    } else {
+        // 電源をオフにする
+        powerToggle.setAttribute('data-status', 'off');
+        powerToggle.textContent = '電源をオンにする';
+        statusText.textContent = 'ロボットの状態：オフライン';
+        visualArea.classList.remove('light-on');
+        visualArea.classList.add('light-off');
+
+        // ★ サーバーへOFF信号送信 (REST APIを使用)
+        sendCommand('power_toggle', 'off');
+
+        // タイマー停止
+        isPowerOn = false;
+        stopTimer();
+    }
 });
 
-
-// ------------------------------------------------------------------
-// 3. UI操作イベントの割り当て
-// ------------------------------------------------------------------
-const visualArea = document.getElementById('active-visual');
-
-// 1. 電源トグルボタン
-document.getElementById('power-toggle').addEventListener('click', (e) => {
-    const button = e.target;
-    const isOff = button.dataset.status === 'off'; 
-    const newStatus = isOff ? 'on' : 'off';
-    
-    sendCommand('power_toggle', newStatus); 
-    
-    // UIと映像を更新 (アニメーションの制御)
-    button.dataset.status = newStatus;
-    button.textContent = isOff ? '電源をオフにする' : '電源をオンにする';
-    visualArea.className = isOff ? 'light-on' : 'light-off'; 
-});
-
-// 2. アーム動作ボタン
+// アーム動作ボタン
 document.getElementById('arm-move').addEventListener('click', () => {
-    sendCommand('move_arm', 'home');
+    if (isPowerOn) {
+        // ★ サーバーへ信号送信 (REST APIを使用)
+        sendCommand('move_arm', 'home');
+    } else {
+        alert('電源がオフです。電源をオンにしてください。');
+    }
 });
 
-// 3. 強弱（明るさ）スライダー
+// 強弱（明るさ）スライダー
 const brightnessSlider = document.getElementById('brightness-slider');
-const brightnessValueDisplay = document.getElementById('brightness-value');
-
-brightnessSlider.addEventListener('input', (e) => {
-    const value = parseInt(e.target.value); 
-    brightnessValueDisplay.textContent = value; 
-    sendCommand('set_brightness', value); 
+const brightnessValue = document.getElementById('brightness-value');
+brightnessSlider.addEventListener('input', (event) => {
+    const value = parseInt(event.target.value);
+    brightnessValue.textContent = value;
+    if (isPowerOn) {
+        // ★ サーバーへ信号送信 (REST APIを使用)
+        sendCommand('set_brightness', value);
+    }
 });
 
-// 4. 色変更ボタン
+// 色変更ボタン
 document.querySelectorAll('.color-btn').forEach(button => {
-    button.addEventListener('click', (e) => {
-        const color = e.target.dataset.color;
-        sendCommand('set_color', color);
+    button.addEventListener('click', (event) => {
+        const color = event.target.getAttribute('data-color');
+        if (isPowerOn) {
+            // ★ サーバーへ信号送信 (REST APIを使用)
+            sendCommand('set_color', color);
+        } else {
+            alert('電源がオフです。色設定はできません。');
+        }
     });
 });
+// ------------------------------------------------------------------

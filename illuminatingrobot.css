@@ -17,14 +17,35 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 button {
-    padding: 10px 15px;
-    margin: 5px;
+    padding: 15px 25px; 
+    font-size: 1.1em;
+    margin: 10px;
     cursor: pointer;
     border: none;
     border-radius: 5px;
+    transition: background-color 0.3s, transform 0.1s;
+}
+#power-toggle {
+    display: block;
+    width: 90%;
+    margin: 15px auto;
+    font-size: 1.3em;
+    font-weight: bold;
 }
 #power-toggle[data-status="off"] { background-color: #dc3545; color: white; }
 #power-toggle[data-status="on"] { background-color: #28a745; color: white; }
+
+#timer-display {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #007bff;
+    margin: 15px 0;
+    padding: 5px;
+    border: 2px solid #007bff;
+    border-radius: 5px;
+    display: inline-block;
+}
+
 
 /* ------------------------------------ */
 /* 映像エリアとキャラクターのスタイル */
@@ -33,41 +54,90 @@ button {
     margin-bottom: 20px;
 }
 #active-visual {
-    /* キャラクター配置の基点 */
     width: 300px;
-    height: 100px; /* 腕立ての上下運動のための高さ */
+    height: 200px; /* キャラクターが大きく動ける高さ */
     margin: 20px auto;
     position: relative; 
+    /* 床面 */
+    border-bottom: 2px solid #ccc; 
 }
-#character {
-    width: 50px;
-    height: 50px;
-    background-color: #4CAF50; /* キャラクターの色 */
-    border-radius: 50%;
+
+.active-character {
+    /* ★新規: 3つのキャラクターに共通の基本スタイルを適用 */
+    height: 60px; /* サイズは個別に設定するためここでは省略 */
+    border-radius: 50%; /* 正円 */
+    box-shadow: 
+        inset 5px 5px 10px rgba(0, 0, 0, 0.2), 
+        0 8px 15px rgba(0, 0, 0, 0.2); 
+    
     position: absolute;
     bottom: 0; 
-    left: 50%;
-    transform: translateX(-50%);
-    transition: opacity 0.3s;
-    opacity: 0; /* 初期状態では非表示 */
+    left: 50%; /* 初期位置は中央 */
+    transform-origin: 50% 100%; /* アニメーションの原点は下部に設定 */
+    transition: opacity 0.3s, background-color 0.3s;
+    opacity: 0; 
 }
 
 /* ------------------------------------ */
-/* 腕立て伏せアニメーションの定義 */
+/* 1. メインキャラクター (#character-main) */
 /* ------------------------------------ */
-@keyframes pushup {
-    /* 腕を伸ばした状態 */
-    0% {
-        transform: translate(-50%, 0) scaleY(1); 
+#character-main {
+    width: 100px;
+    height: 100px; 
+    left: 50%; /* 中央 */
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, #76FF03 30%, #4CAF50 100%); /* 緑色 */
+}
+
+/* ------------------------------------ */
+/* 2. サブキャラクター A (#character-sub-a) */
+/* ------------------------------------ */
+#character-sub-a {
+    width: 40px; /* メインより小さい */
+    height: 40px;
+    left: 10%; /* 左側 */
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, #00BFFF 30%, #007FFF 100%); /* 青色 */
+}
+
+/* ------------------------------------ */
+/* 3. サブキャラクター B (#character-sub-b) */
+/* ------------------------------------ */
+#character-sub-b {
+    width: 70px; /* 中間のサイズ */
+    height: 70px;
+    left: 90%; /* 右側 */
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, #FFD700 30%, #FFA500 100%); /* 黄色/オレンジ色 */
+}
+
+
+/* ------------------------------------ */
+/* アニメーションの定義 (hopは変更なし) */
+/* ------------------------------------ */
+@keyframes hop {
+    /* 0%, 100%: 地面についている状態 */
+    0%, 100% {
+        transform: translate(-50%, 0) scale(1, 1);
+        background: linear-gradient(to bottom, #000080 30%, #191970 100%); 
     }
-    /* 体を下げた状態 */
+    
+    /* 40%: 飛び上がる前の沈み込み */
+    40% {
+        transform: translate(-50%, 0) scale(2, 0.5);
+        background: linear-gradient(to bottom, #0000cd 30%, #00008b 100%); 
+    }
+
+    /* 50%: 空中にいる状態 */
     50% {
-        transform: translate(-50%, 20px) scaleY(0.5); /* Y軸方向に20px下げて潰す */
-        background-color: #FFC107; 
+        transform: translate(-50%, -30px) scale(0.5, 2.5); 
+        background: linear-gradient(to bottom, #00bfff 30%, #87cefe 100%); 
     }
-    /* 再び腕を伸ばした状態 */
-    100% {
-        transform: translate(-50%, 0) scaleY(1);
+    
+    /* 60%: 飛び上がった後の沈み込み (次の着地への準備) */
+    60% {
+        transform: translate(-50%, -10px) scale(1, 2);
+        background: linear-gradient(to bottom, #e0ffff 30%, #00ffff 100%); 
     }
 }
 
@@ -75,13 +145,33 @@ button {
 /* JavaScriptで適用するクラス (電源ON/OFF) */
 /* ------------------------------------ */
 /* 電源ON (照明がON) のとき */
-#active-visual.light-on #character {
+#active-visual.light-on .active-character { /* ★修正: .active-character すべてに適用 */
     opacity: 1; /* 表示 */
-    animation: pushup 1.5s infinite ease-in-out; 
+}
+
+/* ------------------------------------ */
+/* キャラクターごとのバラバラな動きの設定 */
+/* ------------------------------------ */
+
+/* 1. メイン (緑): 基準の動き */
+#active-visual.light-on #character-main {
+    animation: hop 2s infinite cubic-bezier(0.42, 0, 0.58, 1.0); 
+}
+
+/* 2. サブ A (青): 速度を速く、開始を遅らせる */
+#active-visual.light-on #character-sub-a {
+    animation: hop 2.5s infinite cubic-bezier(0.42, 0, 0.58, 1.0); 
+    animation-delay: 0.3s; /* 0.3秒遅れてスタート */
+}
+
+/* 3. サブ B (黄): 速度を遅く、開始をさらに遅らせる */
+#active-visual.light-on #character-sub-b {
+    animation: hop 3s infinite cubic-bezier(0.42, 0, 0.58, 1.0); 
+    animation-delay: 0.7s; /* 0.7秒遅れてスタート */
 }
 
 /* 電源OFFのとき */
-#active-visual.light-off #character {
+#active-visual.light-off .active-character { /* ★修正: .active-character すべてに適用 */
     opacity: 0; /* 非表示 */
     animation: none;
 }

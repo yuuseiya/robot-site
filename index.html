@@ -14,14 +14,17 @@
         <h2 id="status-text">ロボットの状態：オフライン</h2>
         
         <div id="active-visual" class="light-off">
-            <div id="character"></div>
-        </div>
+            <div id="character-main" class="active-character"></div>
+            <div id="character-sub-a" class="active-character"></div>
+            <div id="character-sub-b" class="active-character"></div>
+            </div>
         
     </div>
     
     <div id="control-panel">
         <p>集中度スコア: <span id="concentration">N/A</span></p>
 
+        <p id="timer-display">経過時間: 00:00:00</p>
         <h3>基本操作</h3>
         <button id="power-toggle" data-status="off">電源をオンにする</button>
 
@@ -39,11 +42,11 @@
     </div>
     
     <footer>
-        <p>※ Raspberry Piのサーバー起動が必要です</p>
+        <p>※ サーバー起動が必要です</p>
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
 
-    <script src="illuminatingrobot.js"></script>
+    <script src="illuminatingrobot2.js"></script>
 </body>
 </html>

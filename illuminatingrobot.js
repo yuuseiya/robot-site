@@ -139,7 +139,70 @@ const now = new Date();
         stopTimer();
     }
 });
+// ------------------------------------------------------------------
+// ★★★ 履歴管理関数 (Study History Functions) ★★★
+// ------------------------------------------------------------------
 
+/**
+ * 学習時間履歴をlocalStorageから取得する
+ * @returns {Object} { 'YYYY-MM-DD': totalSeconds, ... }
+ */
+function getHistory() {
+    const json = localStorage.getItem(STORAGE_KEY);
+    return json ? JSON.parse(json) : {};
+}
+
+/**
+ * 学習時間履歴をlocalStorageに保存する
+ */
+function saveHistory(history) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+}
+
+/**
+ * 秒数を 'h時間 m分 s秒' 形式にフォーマットする
+ */
+function formatTimeDuration(totalSeconds) {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    
+    let parts = [];
+    if (h > 0) parts.push(`${h}時間`);
+    if (m > 0) parts.push(`${m}分`);
+    // 時間も分もない場合は秒を表示
+    if (parts.length === 0 || s > 0) parts.push(`${s}秒`); 
+    
+    return parts.join(' ');
+}
+
+
+/**
+ * 履歴データを読み込み、HTMLにレンダリングする
+ */
+function renderHistory() {
+    const history = getHistory();
+    const dates = Object.keys(history).sort().reverse(); // 新しい日付を上に
+
+    historyList.innerHTML = ''; // 一旦リストをクリア
+
+    if (dates.length === 0) {
+        noHistoryMessage.style.display = 'block';
+        return;
+    }
+
+    noHistoryMessage.style.display = 'none';
+
+    dates.forEach(date => {
+        const seconds = history[date];
+        const duration = formatTimeDuration(seconds);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `<td>${date}</td><td>${duration}</td>`;
+        historyList.appendChild(row);
+    });
+}
+// ------------------------------------------------------------------
 // アーム動作ボタン
 document.getElementById('arm-move').addEventListener('click', () => {
     if (isPowerOn) {

@@ -175,3 +175,25 @@ button {
     opacity: 0; /* 非表示 */
     animation: none;
 }
+
+/* ------------------------------------ */
+/* 勉強開始日時 (Study Start Log) のスタイル */
+/* ------------------------------------ */
+
+/* 勉強開始日時全体を囲むPタグのスタイル */
+#study-start-log-container {
+    font-size: 1.1em; /* 経過時間より少し小さく */
+    color: #555;
+    margin: 5px 0 15px 0; /* 経過時間との間隔を調整 */
+    padding: 3px 0;
+    display: block; /* 常に幅全体を使う */
+}
+
+/* 実際の日時部分のスタイル */
+#study-start-time {
+    font-weight: bold;
+    color: #28a745; /* 電源オン時と同じ緑色で「開始」を強調 */
+    display: inline-block;
+    padding: 0 5px;
+    border-bottom: 2px dashed #ccc; /* 記録として目立たせる */
+}

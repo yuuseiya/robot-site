@@ -34,6 +34,15 @@ const timerDisplay = document.getElementById('timer-display');
 const concentrationDisplay = document.getElementById('concentration'); // 集中度表示要素を追加
 const studyStartTimeDisplay = document.getElementById('study-start-time'); // 勉強開始日時表示要素を追加
 
+// ★★★ 履歴表示用の要素を追加 ★★★
+const historyList = document.getElementById('history-list'); // 履歴テーブルの tbody
+const noHistoryMessage = document.getElementById('no-history-message'); // 「記録なし」メッセージ
+
+// localStorageで履歴を保存するためのキー
+const STORAGE_KEY = 'studyTimeHistory';
+// ★★★ 履歴要素の取得ここまで ★★★
+
+
 // 2. WebSocketによるデータ受信の初期化 -----------------------------------------------
 const socket = io(`http://${LOCAL_PC_IP}:5000`);
 
@@ -57,7 +66,7 @@ socket.on('status_update', (data) => {
 // ------------------------------------------------------------------
 
 
-// タイマー関連の変数と関数 (変更なし) -----------------------------------------------
+// タイマー関連の変数と関数 -----------------------------------------------
 let isPowerOn = false;
 let startTime = 0;
 let timerInterval = null;
@@ -76,7 +85,7 @@ function updateTimer() {
 }
 
 function startTimer() {
-    startTime = Date.now();
+    startTime = Date.now(); // 開始時刻を記録
     updateTimer(); 
     timerInterval = setInterval(updateTimer, 1000);
 }
@@ -89,74 +98,13 @@ function stopTimer() {
 // ------------------------------------------------------------------
 
 
-// 3. UI操作イベントの割り当て ------------------------------------------------------
-// 電源トグルボタンのクリックイベント
-powerToggle.addEventListener('click', () => {
-    const currentStatus = powerToggle.getAttribute('data-status');
-    const isOff = (currentStatus === 'off');
-
-    if (isOff) {
-        // 電源をオンにする
-        powerToggle.setAttribute('data-status', 'on');
-        powerToggle.textContent = '電源をオフにする';
-        statusText.textContent = 'ロボットの状態：オンライン (稼働中)';
-        visualArea.classList.remove('light-off');
-        visualArea.classList.add('light-on');
-        
-        // ★ サーバーへON信号送信 (REST APIを使用)
-        sendCommand('power_toggle', 'on');
-        
-        // タイマー開始
-        isPowerOn = true;
-        startTimer();
-
-const now = new Date();
-        const options = {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit',
-            hour12: false
-        };
-        const formattedDate = now.toLocaleString('ja-JP', options);
-        
-        // HTML要素に日時を書き込む
-        if (studyStartTimeDisplay) {
-            studyStartTimeDisplay.textContent = formattedDate;
-        }
-        
-    } else {
-        // 電源をオフにする
-        powerToggle.setAttribute('data-status', 'off');
-        powerToggle.textContent = '電源をオンにする';
-        statusText.textContent = 'ロボットの状態：オフライン';
-        visualArea.classList.remove('light-on');
-        visualArea.classList.add('light-off');
-
-        // ★ サーバーへOFF信号送信 (REST APIを使用)
-        sendCommand('power_toggle', 'off');
-
-        // タイマー停止
-        isPowerOn = false;
-        stopTimer();
-    }
-});
-// ------------------------------------------------------------------
 // ★★★ 履歴管理関数 (Study History Functions) ★★★
-// ------------------------------------------------------------------
-
 /**
  * 学習時間履歴をlocalStorageから取得する
- * @returns {Object} { 'YYYY-MM-DD': totalSeconds, ... }
  */
 function getHistory() {
     const json = localStorage.getItem(STORAGE_KEY);
     return json ? JSON.parse(json) : {};
-}
-
-/**
- * 学習時間履歴をlocalStorageに保存する
- */
-function saveHistory(history) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
 }
 
 /**
@@ -170,7 +118,6 @@ function formatTimeDuration(totalSeconds) {
     let parts = [];
     if (h > 0) parts.push(`${h}時間`);
     if (m > 0) parts.push(`${m}分`);
-    // 時間も分もない場合は秒を表示
     if (parts.length === 0 || s > 0) parts.push(`${s}秒`); 
     
     return parts.join(' ');
@@ -202,7 +149,84 @@ function renderHistory() {
         historyList.appendChild(row);
     });
 }
-// ------------------------------------------------------------------
+// ★★★ 履歴管理関数ここまで ★★★
+
+
+// 3. UI操作イベントの割り当て ------------------------------------------------------
+// 電源トグルボタンのクリックイベント
+powerToggle.addEventListener('click', () => {
+    const currentStatus = powerToggle.getAttribute('data-status');
+    const isOff = (currentStatus === 'off');
+
+    if (isOff) {
+        // 電源をオンにする
+        powerToggle.setAttribute('data-status', 'on');
+        powerToggle.textContent = '電源をオフにする';
+        statusText.textContent = 'ロボットの状態：オンライン (稼働中)';
+        visualArea.classList.remove('light-off');
+        visualArea.classList.add('light-on');
+        
+        // ★ サーバーへON信号送信 (REST APIを使用)
+        sendCommand('power_toggle', 'on');
+        
+        // タイマー開始
+        isPowerOn = true;
+        startTimer(); // ★この中でstartTimeが設定される
+
+        // ★★★ 勉強開始日時を記録するロジック ★★★
+        const now = new Date();
+        const options = {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        };
+        const formattedDate = now.toLocaleString('ja-JP', options);
+        
+        if (studyStartTimeDisplay) {
+            studyStartTimeDisplay.textContent = formattedDate;
+        }
+        // ★★★ 記録ロジックここまで ★★★
+
+    } else {
+        // 電源をオフにする
+        powerToggle.setAttribute('data-status', 'off');
+        powerToggle.textContent = '電源をオンにする';
+        statusText.textContent = 'ロボットの状態：オフライン';
+        visualArea.classList.remove('light-on');
+        visualArea.classList.add('light-off');
+
+        // ★ サーバーへOFF信号送信 (REST APIを使用)
+        sendCommand('power_toggle', 'off');
+
+        // タイマー停止
+        isPowerOn = false;
+        stopTimer();
+        
+        // ★★★ 学習時間の計算と記録ロジック ★★★
+        if (startTime !== 0) {
+            const studyDurationMs = Date.now() - startTime;
+            const studyDurationSeconds = Math.floor(studyDurationMs / 1000);
+            
+            // 開始日を'YYYY-MM-DD'形式で取得
+            const startDate = new Date(startTime);
+            const year = startDate.getFullYear();
+            const month = String(startDate.getMonth() + 1).padStart(2, '0');
+            const day = String(startDate.getDate()).padStart(2, '0');
+            const dateKey = `${year}-${month}-${day}`; 
+            
+            // 1秒以上の学習時間がある場合のみ記録する
+            if (studyDurationSeconds >= 1) {
+                const history = getHistory();
+                history[dateKey] = (history[dateKey] || 0) + studyDurationSeconds; // 既存の時間に加算
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); // 保存
+                renderHistory(); // 履歴リストを更新
+            }
+        }
+        startTime = 0; // 開始時刻をリセット
+        // ★★★ 記録ロジックここまで ★★★
+    }
+});
+
 // アーム動作ボタン
 document.getElementById('arm-move').addEventListener('click', () => {
     if (isPowerOn) {
@@ -238,3 +262,6 @@ document.querySelectorAll('.color-btn').forEach(button => {
     });
 });
 // ------------------------------------------------------------------
+
+// ページの読み込み完了時に履歴を表示する
+document.addEventListener('DOMContentLoaded', renderHistory);

@@ -32,7 +32,7 @@ const statusText = document.getElementById('status-text');
 const visualArea = document.getElementById('active-visual');
 const timerDisplay = document.getElementById('timer-display');
 const concentrationDisplay = document.getElementById('concentration'); // 集中度表示要素を追加
-
+const studyStartTimeDisplay = document.getElementById('study-start-time'); // 勉強開始日時表示要素を追加
 
 // 2. WebSocketによるデータ受信の初期化 -----------------------------------------------
 const socket = io(`http://${LOCAL_PC_IP}:5000`);
@@ -110,6 +110,19 @@ powerToggle.addEventListener('click', () => {
         isPowerOn = true;
         startTimer();
 
+const now = new Date();
+        const options = {
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit',
+            hour12: false
+        };
+        const formattedDate = now.toLocaleString('ja-JP', options);
+        
+        // HTML要素に日時を書き込む
+        if (studyStartTimeDisplay) {
+            studyStartTimeDisplay.textContent = formattedDate;
+        }
+        
     } else {
         // 電源をオフにする
         powerToggle.setAttribute('data-status', 'off');

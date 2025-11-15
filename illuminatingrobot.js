@@ -176,4 +176,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. UI操作イベントの割り当て ------------------------------------------------------
     // 電源トグルボタンのクリックイベント
-    powerToggle.addEventListener('click
+    powerToggle.addEventListener('click', () => {
+        const currentStatus = powerToggle.getAttribute('data-status');
+        const isOff = (currentStatus === 'off');
+
+        if (isOff) {
+            // 電源をオンにする
+            powerToggle.setAttribute('data-status', 'on');
+            powerToggle.textContent = '電源をオフにする';
+            statusText.textContent = 'ロボットの状態：オンライン (稼働中)';
+            visualArea.classList.remove('light-off');
+            visualArea.classList.add('light-on');
+            
+            sendCommand('power_toggle', 'on');
+            
+            // タイマー開始
+            isPowerOn = true;
+            startTimer(timerDisplay); // ★修正：timerDisplayを渡す
+
+            // ★★★ 勉強開始日時を記録するロジック ★★★
+            const now = new Date();
+            const options = {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                hour12: false
+            };
+            const formattedDate = now.toLocaleString('ja-JP', options);
+            
+            if (studyStartTimeDisplay) {
+                studyStartTimeDisplay.textContent = formattedDate;
+            }
+
+        } else {
+            // 電源をオフにする
+            powerToggle.setAttribute('data-status', 'off');
+            powerToggle.textContent = '電源をオンにする';
+            statusText.textContent = 'ロボットの状態：オフライン';
+            visualArea.classList.remove('light-on');
+            visualArea.classList.add('light-off');
+
+            sendCommand('power_toggle', 'off');
+
+            // タイマー停止
+            isPowerOn = false;
+            stopTimer(timerDisplay); // ★修正：timerDisplayを渡す
+            
+            // ★★★ 学習時間の計算と記録ロジック ★★★
+            if (startTime !== 0) {
+                const studyDurationMs = Date.now() - startTime;
+                const studyDurationSeconds = Math.floor(studyDurationMs / 1000);
+                
+                const startDate = new Date(startTime);
+                const year = startDate.getFullYear();
+                const month = String(startDate.getMonth() + 1).padStart(2, '0');
+                const day = String(startDate.getDate()).padStart(2, '0');
+                const dateKey = `${year}-${month}-${day}`; 
+                
+                if (studyDurationSeconds >= 1) {
+                    const history = getHistory();
+                    history[dateKey] = (history[dateKey] || 0) + studyDurationSeconds;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(history)); 
+                    // ★修正：historyListとnoHistoryMessageを渡す
+                    renderHistory(historyList, noHistoryMessage); 
+                }
+            }
+            startTime = 0; 
+        }
+    });
+    // ------------------------------------------------------------------
+
+    // その他のイベントリスナー (例: アーム移動、明るさ設定などがあればここに追加)
+
+}); // <--- DOMContentLoadedの閉じ括弧

@@ -17,8 +17,7 @@
             <div id="character-main" class="active-character"></div>
             <div id="character-sub-a" class="active-character"></div>
             <div id="character-sub-b" class="active-character"></div>
-            </div>
-        
+        </div>
     </div>
     
     <div id="control-panel">
@@ -26,21 +25,14 @@
 
         <p id="timer-display">経過時間: 00:00:00</p>
         <p id="study-start-log-container">勉強開始日時: <span id="study-start-time">未記録</span></p>
+        
         <h3>基本操作</h3>
         <button id="power-toggle" data-status="off">電源をオンにする</button>
 
-        <button id="arm-move">アームを定位置へ動かす</button>
+        <button id="open-settings-button">💡 照明設定を開く</button>
+        <button id="open-robot-move-button">🤖 ロボット動作設定を開く</button>
 
-        <h3>照明設定</h3>
-        <label for="brightness-slider">明るさ：<span id="brightness-value">50</span>%</label>
-        <input type="range" id="brightness-slider" min="0" max="100" value="50">
-        
-        <div id="color-controls">
-            <button class="color-btn" data-color="white">白色</button>
-            <button class="color-btn" data-color="blue">青色</button>
-            <button class="color-btn" data-color="yellow">暖色</button>
         </div>
-    </div>
     
     <div id="study-history-panel">
         <h3>学習時間履歴</h3>
@@ -53,16 +45,71 @@
                 </tr>
             </thead>
             <tbody id="history-list">
-                </tbody>
+            </tbody>
         </table>
         <p id="no-history-message">まだ記録はありません。</p>
     </div>
+    
     <footer>
         <p>※ サーバー起動が必要です</p>
     </footer>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
+    <div id="setting-modal" class="hidden">
+        <div class="modal-content">
+            <h2>💡 詳細照明設定</h2>
+            
+            <div id="brightness-control">
+                <label for="brightness-slider-modal">明るさ調整：<span id="brightness-value-modal">50</span>%</label>
+                <div class="slider-group">
+                    <span class="icon-min">🔆</span>
+                    <input type="range" id="brightness-slider-modal" min="0" max="100" value="50">
+                    <span class="icon-max">💡</span>
+                </div>
+            </div>
+            
+            <div id="color-controls-modal">
+                <h3>カラーピッカー（詳細設定）</h3>
+                <div id="picker-container">
+                    <p style="color: #bbb; font-size: 0.9em; margin-top: 10px;">（Color Picker UI Area）</p>
+                </div>
+                </div>
 
+            <button class="close-button">閉じる</button>
+        </div>
+    </div>
+    
+    <div id="robot-move-modal" class="hidden">
+        <div class="modal-content">
+            <h2>🤖 ロボットアーム動作設定</h2>
+
+            <div id="arm-controls">
+                
+                <div class="angle-control-group">
+                    <label for="base-angle-slider">ベース軸 (左右): <span id="base-angle-value">90</span>°</label>
+                    <input type="range" id="base-angle-slider" min="0" max="180" value="90">
+                </div>
+                
+                <div class="angle-control-group">
+                    <label for="shoulder-angle-slider">肩軸 (上下): <span id="shoulder-angle-value">90</span>°</label>
+                    <input type="range" id="shoulder-angle-slider" min="0" max="180" value="90">
+                </div>
+                
+                <div class="angle-control-group">
+                    <label for="elbow-angle-slider">肘軸 (前後): <span id="elbow-angle-value">90</span>°</label>
+                    <input type="range" id="elbow-angle-slider" min="0" max="180" value="90">
+                </div>
+                
+                <hr>
+                
+                <button id="arm-move-custom">設定角度でアームを動かす</button>
+                <button id="arm-move-home">定位置へ動かす</button>
+            </div>
+
+            <button class="close-button">閉じる</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
     <script src="illuminatingrobot.js"></script>
 </body>
 </html>
